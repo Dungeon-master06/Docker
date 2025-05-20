@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Все книги</title>
+    <link href="{% static 'css/bootstrap.css' %}" rel="stylesheet">
+</head>
+<body >
+    {% include "header.html" %}
+        <div class="container py-4">
+            <h1 class="mb-4 text-center">📚 Все книги</h1>
+            <div class="row text-center mb-4">
+                <div class="col-md-6">
+                    <div class="bg-white shadow-sm rounded p-3 border">
+                        <h5 class="mb-0">📙 Книг</h5>
+                        <p class="fs-4 fw-bold mb-0">{{ total_books }}</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="bg-white shadow-sm rounded p-3 border">
+                        <h5 class="mb-0">🗂 Категорий</h5>
+                        <p class="fs-4 fw-bold mb-0">{{ total_categories }}</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Фильтры -->
+            <form method="get" class="mb-4 row g-2">
+                <div class="col-md-6">
+                    <input type="text" name="q" class="form-control" placeholder="🔍 Поиск по названию" value="{{ search_query }}">
+                </div>
+                <div class="col-md-4">
+                    <input type="text" name="author" class="form-control" placeholder="✍️ Фильтр по автору" value="{{ author_filter }}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" name="filter" class="btn btn-primary w-100">Фильтровать</button>
+                </div>
+            </form>
+            {% if user.is_superuser%}
+            <div class="text-start mb-3">
+                <a href="{% url 'book-add' %}" class="btn btn-success">➕ Добавить книгу</a>
+            </div>
+            {% endif %}
+
+            <!-- Категории -->
+            <div class="mb-4 text-center">
+                <button type="button"
+                        class="btn btn-outline-secondary btn-sm ms-auto"
+                        data-bs-toggle="modal"
+                        data-bs-target="#allCategoriesModal">
+                    ☰
+                </button>
+                <a href="{% url 'books' %}" class="btn btn-outline-dark btn-sm {% if not category_id %}active{% endif %}">Сброс</a>
+                {% for category in categories|slice:":5" %}
+                    <a href="?category={{ category.id }}" class="btn btn-outline-primary btn-sm {% if category_id|add:'' == category.id|stringformat:'s' %}active{% endif %}">
+                        {{ category.title }}
+                    </a>
+                {% endfor %}
+            </div>
+
+            <!-- Сетка книг -->
+            <div class="row row-cols-1 row-cols-md-5 g-4">
+                {% for book in books %}
+                    <div class="col">
+                        <div class="card h-100 shadow-sm">
+                            {% if book.cover_image %}
+                                <img src="{{ book.cover_image.url }}" class="card-img-top" alt="{{ book.title }}">
+                            {% endif %}
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title">
+                                    <a href="{{ book.get_absolute_url }}" class="text-decoration-none text-dark">{{ book.title }}</a>
+                                </h5>
+                                <h6 class="card-subtitle mb-2 text-muted">{{ book.author }}</h6>
+                                <p class="card-text">{{ book.description|truncatewords:10|safe }}</p>
+                                <div class="mt-auto">
+                                    <a href="{{ book.get_absolute_url }}" class="btn btn-primary btn-sm w-100 mb-2">Подробнее 📖</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p>Книг пока нет.</p>
+                {% endfor %}
+            </div>
+        </div>
+        <!-- Пагинация -->
+        {% if page_obj.has_other_pages %}
+        <nav aria-label="Навигация по страницам">
+            <ul class="pagination justify-content-center mt-4">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}" aria-label="Предыдущая">
+                        &laquo;
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% else %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% if selected_category %}&category={{ selected_category }}{% endif %}">{{ num }}</a>
+                </li>
+                {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}" aria-label="Следующая">
+                        &raquo;
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        
+        <!-- Модальное окно по центру -->
+        <div class="modal fade" id="allCategoriesModal" tabindex="-1" aria-labelledby="allCategoriesLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable"> <!-- 👈 Центрирование -->
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="allCategoriesLabel">🗂 Выберите категорию книг</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="d-flex flex-wrap gap-2">
+                            {% if categories %}
+                            {% for category in categories %}
+                            <a href="?category={{ category.id }}" class="btn btn-outline-primary btn-sm {% if selected_category|add:'' == category.id|stringformat:'s' %}active{% endif %}">
+                                {{ category.title }}
+                            </a>
+                            {% endfor %}
+                            {% else %}
+                            <p>Категории пока нет.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% include "footer.html" %}
+</body>
+<script src="{% static 'js/bootstrap.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</html>

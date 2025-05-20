@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Добавить книгу</title>
+    <link href="{% static 'css/bootstrap.css' %}" rel="stylesheet">
+    <style>
+        body {
+            background: #f8f9fa;
+        }
+        .form-label {
+            font-weight: 500;
+        }
+        .card {
+            border-radius: 1rem;
+        }
+        .btn-primary {
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    {% include "header.html" %}
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-7">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <h5 class="mb-3 text-secondary">📂 Новая категория</h5>
+                        <form method="post">
+                            {% csrf_token %}
+                            {{ category_form.as_p }}
+                            <button type="submit" name="add_category" class="btn btn-outline-secondary w-100">
+                                ➕ Создать категорию
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <h2 class="mb-4 text-primary">📚 Добавить книгу</h2>
+
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            {{ book_form.as_p }}
+
+                            <button type="submit" class="btn btn-primary w-100">📌 Сохранить книгу</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <a href="{% url 'books' %}" class="btn btn-outline-primary">⬅ Назад к списку книг</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include "footer.html" %}
+</body>
+</html>
